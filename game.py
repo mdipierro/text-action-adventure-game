@@ -12,6 +12,8 @@ OPPOSITES = {'visible':'invisible',
 PLURAL = 'plural'
 LOCKED = 'locked'
 INVISIBLE = 'invisible'
+WINNER = 'winner'
+
 YOU = 'you'
 _AND_ = ' and '
 
@@ -76,8 +78,6 @@ MSG_UNKNOWN_WAY = "no known way to get to %s"
 MSG_UNKOWN = 'unknown'
 MSG_THING_UNKNOWN = '%s unknown'
 MSG_CANNOT_TAKE_SELF = 'you cannot lift yourself!'
-
-
 
 HELP = """
 Commands:
@@ -312,7 +312,7 @@ class Game(object):
             self.things[YOU][IN] = set([name])
             message = self.things[name][SAYS] or ''
             if MSG_WIN in message:
-                self.things[YOU][IS].add('winner')
+                self.things[YOU][IS].add(WINNER)
             return message
         raise Message(MSG_UNKNOWN_WAY % fullname)
 
