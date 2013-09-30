@@ -1,7 +1,7 @@
 import re
 import sys
 import cPickle
-import readline; readline.parse_and_bind("tab: complete")
+import readline; readline.parse_and_bind('tab: complete')
 
 
 OPPOSITES = {'visible':'invisible',
@@ -71,13 +71,15 @@ MSG_LOADED = 'game loaded'
 MSG_TAKEN = '%s taken'
 MSG_DROPPED = '%s dropped'
 MSG_ENTERED = 'you entered %s'
-MSG_UNKNOWN = "%s is unknown"
-MSG_NOT_PLACE = "%s is not a place"
+MSG_UNKNOWN = '%s is unknown'
+MSG_NOT_PLACE = '%s is not a place'
 MSG_INSIDE_ALREADY = 'you are in %s already'
-MSG_UNKNOWN_WAY = "no known way to get to %s"
+MSG_UNKNOWN_WAY = 'no known way to get to %s'
 MSG_UNKOWN = 'unknown'
 MSG_THING_UNKNOWN = '%s unknown'
 MSG_CANNOT_TAKE_SELF = 'you cannot lift yourself!'
+
+PROMPT = 'YOU> '
 
 HELP = """
 Commands:
@@ -95,7 +97,29 @@ Commands:
 - internals
 """
 
-class Message(RuntimeError): pass
+SAMPLE = """
+you are in the bedroom
+the bedroom says "the scope of the game is to get to the bathroom"
+a green door is in the bedroom
+the green door is locked
+the green door leads to the bathroom
+a cat is in the bedroom
+the color of the cat is white
+a table is in the bedroom
+the cat is on the table
+a blue key is in the bedroom
+the blue key is under the table
+the blue key is invisible
+the cat is meowing
+you can kick the table
+if you poke the cat then the cat says "kick the table"
+if you kick the table then the blue key is visible
+if you use the blue key and you have the blue key then the green door is unlocked
+the bathroom says "you made it here and won the game!"
+"""
+
+class Message(RuntimeError):    
+    pass
 
 def normalize(text):
     text = RE_CLEAN.sub(' ', text.strip())
@@ -104,7 +128,7 @@ def normalize(text):
 
 def article_split(subj):
     """
-    breaks subj=='the green cat' into ('the', 'green cat')
+    breaks subj == 'the green cat' into ('the', 'green cat')
     """
     parts = subj.split(' ', 1)
     article = parts[0].lower()
@@ -180,8 +204,9 @@ class Event(object):
                 thing[verb][groupdict[KEY]] = groupdict[VALUE]
                 messages.append('%(k)s of %(s)s is %(v)s' % groupdict)
         return '\n'.join(messages) or MSG_NOTHING_HAPPENED
+
     def __repr__(self):
-        return 'event(%s conditions->%s effects)' % (len(self.conditions), len(self.effects))
+        return 'event(%s conditions -> %s effects)' % (len(self.conditions), len(self.effects))
 
 class Parser(object):
     def __init__(self, input):
@@ -369,7 +394,7 @@ class Game(object):
             thing[IN] |= you[IN]
             you[HAS].remove(name)
         else:
-            raise Message("you do not have %s" % name)
+            raise Message('you do not have %s' % name)
 
     def inspect(self, name):
         """
@@ -383,20 +408,20 @@ class Game(object):
             fullname = '%s%s' % (article, name)
             v = 'are' if name == YOU or 'plural' in thing[IS] else IS
             if thing[IS]:
-                s += '%s %s %s\n' %(fullname, v, self.join(thing[IS]))
+                s += '%s %s %s\n' % (fullname, v, self.join(thing[IS]))
                 if thing[IN] - you[IN]:
-                    s += '%s %s in %s\n' %(fullname, v, self.join(thing[IN]-you[IN]))
+                    s += '%s %s in %s\n' % (fullname, v, self.join(thing[IN]-you[IN]))
             if thing[ON]:
-                s += '%s %s on %s\n' %(fullname, v, self.join(thing[ON]))
+                s += '%s %s on %s\n' % (fullname, v, self.join(thing[ON]))
             if thing[UNDER]:
-                s += '%s %s under %s\n' %(fullname, v, self.join(thing[UNDER]))
+                s += '%s %s under %s\n' % (fullname, v, self.join(thing[UNDER]))
             if thing[NEAR]:
-                s += '%s %s near %s\n' %(fullname, v, self.join(thing[NEAR]))
+                s += '%s %s near %s\n' % (fullname, v, self.join(thing[NEAR]))
             for key, value in thing[ATTR].items():
-                s += 'the %s of %s is %s\n' %(key, fullname, value)
+                s += 'the %s of %s is %s\n' % (key, fullname, value)
             v = 'have' if name == YOU or 'plural' in thing[IS] else HAS
             if thing[HAS]:
-                s += '%s %s %s\n' %(fullname, v, self.join(thing[HAS]))
+                s += '%s %s %s\n' % (fullname, v, self.join(thing[HAS]))
             if thing[EVENTS]:
                 s += 'you can %s %s\n' % (
                     ', '.join(thing[EVENTS].keys()), fullname)
@@ -460,7 +485,7 @@ class Game(object):
 
     def action(self, verb, name):
         article, key = article_split(name)
-        if self.can_see(key,taken=True):
+        if self.can_see(key, taken=True):
             thing = self.things[key]
             if not verb in thing[EVENTS]:
                 raise Message(MSG_YOU_CANNOT % ('%s %s' % (verb, name)))
@@ -485,7 +510,7 @@ class Game(object):
         return 'winner' in self.things[YOU][IS]
 
     def input(self, echo=False):
-        command = raw_input('YOU> ')
+        command = raw_input(PROMPT)
         if echo:
             print command
         return command
@@ -505,28 +530,11 @@ class Game(object):
         except (EOFError, KeyboardInterrupt):
             print
 
-SAMPLE="""
-you are in the bedroom
-the bedroom says "the scope of the game is to get to the bathroom"
-a green door is in the bedroom
-the green door is locked
-the green door leads to the bathroom
-a cat is in the bedroom
-the color of the cat is white
-a table is in the bedroom
-the cat is on the table
-a blue key is in the bedroom
-the blue key is under the table
-the blue key is invisible
-the cat is meowing
-you can kick the table
-if you poke the cat then the cat says "kick the table"
-if you kick the table then the blue key is visible
-if you use the blue key and you have the blue key then the green door is unlocked
-the bathroom says "you made it here and won the game!"
-"""
 
-if __name__ == '__main__':
+def main():
     input = open(sys.argv[1]).read() if len(sys.argv)>1 else SAMPLE
     echo = len(sys.argv)>2 and sys.argv[2]=='echo'
     Game(input).play(echo=echo)
+
+if __name__ == '__main__': main()
+
