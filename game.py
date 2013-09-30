@@ -14,7 +14,7 @@ LOCKED = 'locked'
 INVISIBLE = 'invisible'
 WINNER = 'winner'
 
-YOU = 'you'
+PLAYER = 'you'
 _AND_ = ' and '
 
 NAME, ARTICLE, HAS, IS, IN, ON, UNDER, NEAR, ATTR, EVENTS, SAYS, TO, CAN = \
@@ -62,6 +62,7 @@ MSG_YOU_ARE = 'you are %s'
 MSG_YOU_ARE_IN = 'you are in %s'
 MSG_YOU_HAVE = 'you have %s'
 MSG_YOU_SEE = 'you see %s'
+MSG_YOU_DNOT_HAVE = 'you do not have %s'
 MSG_DONT_UNDERSTAND = 'sorry, I do not understand'
 MSG_NOTHING_HAPPENED = 'nothing happened'
 MSG_NOT_ALLOWED = 'not allowed'
@@ -214,7 +215,7 @@ class Parser(object):
         input the game script, see sample below
         """
         self.things = {}
-        self.get_or_store_thing(YOU)
+        self.get_or_store_thing(PLAYER)
         for k, rawline in enumerate(input.split('\n')):
             line = normalize(rawline)
             if line and not line.startswith('#'):
@@ -256,7 +257,7 @@ class Parser(object):
         if m:
             cond = m.group(CONDITION).replace(', ', _AND_).split(_AND_)
             actions = m.group(ACTION).replace(', ', _AND_).split(_AND_)
-            if not cond[0].startswith(YOU+' '):
+            if not cond[0].startswith(PLAYER+' '):
                 return False
             cause, name = cond[0][4:].split(' ', 1)
             article, key = article_split(name)
@@ -285,7 +286,7 @@ class Parser(object):
         if verb == ATTR:
             thing[ATTR][match[KEY]] = match[VALUE]
         elif verb == CAN:
-            if thing[NAME] != YOU:
+            if thing[NAME] != PLAYER:
                 return False
             obj = self.get_or_store_thing(match[OBJECT])
             obj[EVENTS][match[VERB]] = set()
@@ -326,18 +327,18 @@ class Game(object):
         thing = self.things[name]
         if not 'place' in thing[IS]:
             raise Message(MSG_NOT_PLACE % fullname)
-        you = self.things[YOU]
-        if name in you[IN]:
+        player = self.things[PLAYER]
+        if name in player[IN]:
             raise Message(MSG_INSIDE_ALREADY % fullname)
         things = [self.things[key] for key in self.visible()]
         places = reduce(lambda a, b:a|b,
                         [thing[TO] for thing in things if
                          not LOCKED in thing[IS]], set())
         if force or name in places:
-            self.things[YOU][IN] = set([name])
+            self.things[PLAYER][IN] = set([name])
             message = self.things[name][SAYS] or ''
             if MSG_WIN in message:
-                self.things[YOU][IS].add(WINNER)
+                self.things[PLAYER][IS].add(WINNER)
             return message
         raise Message(MSG_UNKNOWN_WAY % fullname)
 
@@ -348,12 +349,12 @@ class Game(object):
         thing = self.things.get(name)
         if not thing:
             raise Message(MSG_THING_UNKNOWN % name)
-        you = self.things[YOU]
-        if taken and thing[NAME] in you[HAS]:
+        player = self.things[PLAYER]
+        if taken and thing[NAME] in player[HAS]:
             return True
         if INVISIBLE in thing[IS]:
             return False
-        return (name in you[IN] or you[IN].intersection(thing[IN]))
+        return (name in player[IN] or player[IN].intersection(thing[IN]))
 
     def visible(self):
         """
@@ -369,32 +370,32 @@ class Game(object):
 
     def take_thing(self, name):
         """
-        take a thing by adding to self.things[YOU][HAS]
+        take a thing by adding to self.things[PLAYER][HAS]
         """
         article, name = article_split(name)
-        if name == YOU:
+        if name == PLAYER:
             raise Message(MSG_CANNOT_TAKE_SELF)
-        you = self.things[YOU]
+        player = self.things[PLAYER]
         if self.can_see(name):
             thing = self.things[name]
             for k in PREPOSITIONS:
                 thing[k].clear()
-            you[HAS].add(name)
+            player[HAS].add(name)
         else:
             raise Message(MSG_THING_UNKNOWN % name)
 
     def drop_thing(self, name):
         """
-        drop something you have in the your currently are
+        drop something player have in the playerr currently are
         """
         article, name = article_split(name)
-        you = self.things[YOU]
-        if name in you[HAS]:
+        player = self.things[PLAYER]
+        if name in player[HAS]:
             thing = self.things[name]
-            thing[IN] |= you[IN]
-            you[HAS].remove(name)
+            thing[IN] |= player[IN]
+            player[HAS].remove(name)
         else:
-            raise Message('you do not have %s' % name)
+            raise Message(MSG_YOU_DONT_HAVE % name)
 
     def inspect(self, name):
         """
@@ -403,14 +404,14 @@ class Game(object):
         article, name = article_split(name)
         if self.can_see(name):
             thing = self.things[name]
-            you = self.things[YOU]
+            player = self.things[PLAYER]
             s = ''
             fullname = '%s%s' % (article, name)
-            v = 'are' if name == YOU or 'plural' in thing[IS] else IS
+            v = 'are' if name == PLAYER or PLURAL in thing[IS] else IS
             if thing[IS]:
                 s += '%s %s %s\n' % (fullname, v, self.join(thing[IS]))
-                if thing[IN] - you[IN]:
-                    s += '%s %s in %s\n' % (fullname, v, self.join(thing[IN]-you[IN]))
+                if thing[IN] - player[IN]:
+                    s += '%s %s in %s\n' % (fullname, v, self.join(thing[IN]-player[IN]))
             if thing[ON]:
                 s += '%s %s on %s\n' % (fullname, v, self.join(thing[ON]))
             if thing[UNDER]:
@@ -419,11 +420,11 @@ class Game(object):
                 s += '%s %s near %s\n' % (fullname, v, self.join(thing[NEAR]))
             for key, value in thing[ATTR].items():
                 s += 'the %s of %s is %s\n' % (key, fullname, value)
-            v = 'have' if name == YOU or 'plural' in thing[IS] else HAS
+            v = 'have' if name == PLAYER or 'plural' in thing[IS] else HAS
             if thing[HAS]:
                 s += '%s %s %s\n' % (fullname, v, self.join(thing[HAS]))
             if thing[EVENTS]:
-                s += 'you can %s %s\n' % (
+                s += 'player can %s %s\n' % (
                     ', '.join(thing[EVENTS].keys()), fullname)
             if thing[TO]:
                 s += 'it leads to %s\n' % (', '.join(thing[TO]))
@@ -434,25 +435,25 @@ class Game(object):
     #### methods that perform I for user interface
 
     def where_am_i(self):
-        return MSG_YOU_ARE_IN % ', '.join(self.things[YOU][IN])
+        return MSG_YOU_ARE_IN % ', '.join(self.things[PLAYER][IN])
 
     def who_am_i(self):
-        if self.things[YOU][IS]:
-            return MSG_YOU_ARE % ', '.join(self.things[YOU][IS])
+        if self.things[PLAYER][IS]:
+            return MSG_YOU_ARE % ', '.join(self.things[PLAYER][IS])
         else:
             return MSG_UNKOWN
 
     def what_do_i_have(self):
-        if self.things[YOU][HAS]:
+        if self.things[PLAYER][HAS]:
             return MSG_YOU_HAVE % ', '.join('%(article)s%(name)s' % self.things[key]
-                                            for key in self.things[YOU][HAS])
+                                            for key in self.things[PLAYER][HAS])
         else:
             return MSG_UNKOWN
 
     def look_around(self):
         names = self.visible()
         return MSG_YOU_SEE % ', '.join('%(article)s%(name)s' % self.things[key]
-                                       for key in names if not key == YOU)
+                                       for key in names if not key == PLAYER)
 
     def look_at(self, name):
         return self.inspect(name).rstrip()
@@ -496,7 +497,7 @@ class Game(object):
         return MSG_NOT_ALLOWED
 
     def start(self):
-        for place in self.things[YOU][IN]:
+        for place in self.things[PLAYER][IN]:
             message = self.things[place][SAYS]
             if message:
                 print message
@@ -507,7 +508,7 @@ class Game(object):
         except Message, e:
             message = str(e)
         print message
-        return 'winner' in self.things[YOU][IS]
+        return 'winner' in self.things[PLAYER][IS]
 
     def input(self, echo=False):
         command = raw_input(PROMPT)
