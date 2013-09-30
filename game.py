@@ -249,8 +249,6 @@ class Game(object):
         you = self.things['you']
         if name in you['in']:
             raise Message('you are in %s already' % fullname)
-        if not 'place' in self.things[name]['is']:
-            raise Message("%s is not a place" % fullname)
         things = [self.things[key] for key in self.visible()]
         places = reduce(lambda a,b:a|b,
                         [thing['to'] for thing in things if
@@ -260,7 +258,7 @@ class Game(object):
             return self.things[name]['says'] or ''
         raise Message("no known way to get to %s" % fullname)
 
-    def can_see(self,name):
+    def can_see(self,name,taken=True):
         """
         game.can_see('the cat') -> True or False
         """
@@ -268,7 +266,7 @@ class Game(object):
         if not thing:
             raise Message("%s is unkown" % name)
         you = self.things['you']
-        if thing['name'] in you['has']:
+        if taken and thing['name'] in you['has']:
             return True
         if 'invisible' in thing['is']:
             return False
@@ -278,7 +276,7 @@ class Game(object):
         """
         returns a list of names of visible things
         """
-        return [name for name in self.things if self.can_see(name)]
+        return [name for name in self.things if self.can_see(name,taken=False)]
 
     def join(self,items):
         """
