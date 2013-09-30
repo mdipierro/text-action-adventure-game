@@ -1,0 +1,44 @@
+the scope of the game is to get to the bathroom
+YOU> help
+
+Commands:
+- who am I?
+- what am I?
+- what do I have?
+- look aroung
+- look at <thing>
+- take <thing>
+- drop <thing>
+- enter <thing>
+- <verb> <thing>
+
+YOU> look around
+you see a green door, a cat, the bedroom, a table
+YOU> look at the green door
+the green door is locked
+it leads to bathroom
+YOU> enter the bathroom
+no known way to get to the bathroom
+YOU> look at the cat
+the cat is meowing
+the cat is on a table
+the color of the cat is white
+you can poke the cat
+YOU> poke the cat
+the cat says "kick the table"
+YOU> kick the table
+the blue key is visible
+YOU> take the blue key
+the blue key taken
+YOU> save game to test.pickle
+game saved!
+YOU> load game from test.pickle
+game loaded!
+YOU> use the blue key
+the green door is unlocked
+YOU> look at the green door
+the green door is unlocked
+it leads to bathroom
+YOU> enter the bathroom
+you are now in the bathroom
+you made it here and won the game!

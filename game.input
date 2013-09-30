@@ -1,48 +1,13 @@
-[PLACES]
-# syntax:
-# <room name>: <room description>
-room 1: you are in a pink room
-room 2: you are in a dark room
-room 3: you are in a green room
-
-[DOORS]
-# syntax:
-# <room from>: <room to>: <open or closed>
-room 1: room 2: open
-room 2: room 3: open
-room 1: room 3: closed
-
-[THINGS]
-# syntax:
-# <subject> is <object>
-# <subject> is in <object>
-# <subject> is on <object>
-# <subject> is under <object>
-# <subject> is near <object>
-# <subject> has <object>
-
-the player is a person
-he has a sword
-he has a bag
-the bag has three pockets
-
-a table is in room 1
-it has a green cover
-a cat is in room 1
-
-he is an animal
-he is a felin
-he is under the table
-a blue key is in room 1
-a blue key is on the table
-
-the player can poke the cat
-he can take the blue key
-
-if poke the cat, the player can take the blue key, 
-
-#
-# if <subject> is <object> (and ... or ...) then <subject> is <open> 
-# if <subject> is <object> (and ... or ...) then <subject> is <open> 
-#
-#if the player pokes the cat then the cat moves off the table, it becomes green, it says "hello man" 
+help
+look around
+look at the green door
+enter the bathroom
+look at the cat
+poke the cat
+kick the table
+take the blue key
+save game to test.pickle
+load game from test.pickle
+use the blue key
+look at the green door
+enter the bathroom
