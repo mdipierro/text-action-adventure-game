@@ -37,6 +37,8 @@ RE_CONFIG = [
     (re.compile('(?P<s>.+?) leads to (?P<o>.+?)$'),                               TO),
 ]
 
+CONDITION, ACTION, SUBJECT, OBJECT, KEY, VALUE, VERB = 'c|a|s|o|k|v|v'.split('|')
+
 RE_INPUT = [
     (re.compile('internals'),                            'internals'),
     (re.compile('(\?|help)'),                            'help'),
@@ -74,6 +76,8 @@ MSG_UNKNOWN_WAY = "no known way to get to %s"
 MSG_UNKOWN = 'unknown'
 MSG_THING_UNKNOWN = '%s unknown'
 MSG_CANNOT_TAKE_SELF = 'you cannot lift yourself!'
+
+
 
 HELP = """
 Commands:
@@ -140,18 +144,18 @@ class Event(object):
     def __call__(self):
         condition = True
         for verb, groupdict in self.conditions:
-            article, key = article_split(groupdict['s'])
+            article, key = article_split(groupdict[SUBJECT])
             thing = self.things.get(key)
             if not thing:
                 condition = False
             else:
                 values = thing[verb]
                 if isinstance(values, set):
-                    article, key = article_split(groupdict['o'])
+                    article, key = article_split(groupdict[OBJECT])
                     if not key in values:
                         condition = False
                 elif isinstance(values, dict):
-                    if values[groupdict['k']] != groupdict['v']:
+                    if values[groupdict[KEY]] != groupdict[VALUE]:
                         condition = False
                 else:
                     condition = False
@@ -159,21 +163,21 @@ class Event(object):
             return MSG_NOTHING_HAPPENED
         messages = []
         for verb, groupdict in self.effects:
-            article, key = article_split(groupdict['s'])
+            article, key = article_split(groupdict[SUBJECT])
             thing = self.things.get(key)
             if not thing:
                 return MSG_NOTHING_HAPPENED
             values = thing[verb]
             if verb == SAYS:
-                thing[verb] = groupdict['o']
+                thing[verb] = groupdict[OBJECT]
                 messages.append('%(s)s says "%(o)s"' % groupdict)
             elif isinstance(values, set):
-                article, key = article_split(groupdict['o'])
+                article, key = article_split(groupdict[OBJECT])
                 add_opposites(values, key)
                 groupdict['verb'] = verb
                 messages.append('%(s)s %(verb)s %(o)s' % groupdict)
             elif isinstance(values, dict):
-                thing[verb][groupdict['k']] = groupdict['v']
+                thing[verb][groupdict[KEY]] = groupdict[VALUE]
                 messages.append('%(k)s of %(s)s is %(v)s' % groupdict)
         return '\n'.join(messages) or MSG_NOTHING_HAPPENED
     def __repr__(self):
@@ -225,8 +229,8 @@ class Parser(object):
         # code to handle events
         m = RE_IF.match(statement)
         if m:
-            cond = m.group('c').replace(', ', _AND_).split(_AND_)
-            actions = m.group('a').replace(', ', _AND_).split(_AND_)
+            cond = m.group(CONDITION).replace(', ', _AND_).split(_AND_)
+            actions = m.group(ACTION).replace(', ', _AND_).split(_AND_)
             if not cond[0].startswith(YOU+' '):
                 return False
             cause, name = cond[0][4:].split(' ', 1)
@@ -242,8 +246,8 @@ class Parser(object):
                 verb, match = find_match(action, RE_CONFIG)
                 if not match:
                     return False
-                if 'o' in match:
-                    self.get_or_store_thing(match['o'])
+                if OBJECT in match:
+                    self.get_or_store_thing(match[OBJECT])
                 effects.append((verb, match))
             events = thing[EVENTS][cause] = thing[EVENTS].get(cause, set())
             events.add(Event(self.things, conditions, effects))
@@ -252,19 +256,19 @@ class Parser(object):
         verb, match = find_match(statement, RE_CONFIG)
         if not match:
             return False
-        thing = self.get_or_store_thing(match['s'])
+        thing = self.get_or_store_thing(match[SUBJECT])
         if verb == ATTR:
-            thing[ATTR][match['k']] = match['v']
+            thing[ATTR][match[KEY]] = match[VALUE]
         elif verb == CAN:
             if thing[NAME] != YOU:
                 return False
-            obj = self.get_or_store_thing(match['o'])
-            obj[EVENTS][match['v']] = set()
+            obj = self.get_or_store_thing(match[OBJECT])
+            obj[EVENTS][match[VERB]] = set()
         else:
             if verb == SAYS:
-                thing[verb] = match['o']
+                thing[verb] = match[OBJECT]
             else:
-                other = self.get_or_store_thing(match['o'])
+                other = self.get_or_store_thing(match[OBJECT])
                 thing[verb].add(other[NAME])
                 if verb == TO:
                     other[IS].add('place')
